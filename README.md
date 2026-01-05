@@ -1,10 +1,18 @@
 # Project:
-- Build a fully funtioning F1 race tire wear predictor based on SciML methods and PINN's for second order PDE calculations.
+- Build a fully funtioning F1 race tire wear predictor based on SciML methods and PINN's for ODE calculations.
+
+# Actual Flow:
+1. Use FastF1 to get data, gather input from user (track, driver, session, etc).
+2. Preprocess data, clean and structure it for model input.
+3. Build the model using Physics Informed Neural Networks to solve the ODE's governing tire wear.
+4. Update priors using Bayesian Inference, remove noisy data using Kalman Filtering, run Monte Carlo simulations to generate possible scenarios.
+5. Visualize results and generate predictions for tire wear over the race, clear cache.
 
 # Design Logic:
+- Physics Informed Neural Networks for solving the ODE's that govern tire wear.
 - Bayesian Interference for parameter estimation.
 - Kalman Filtering for state estimation.
-- Physics Informed Neural Networks for solving the second order PDE's that govern tire wear.
+- Monte Carlo Simulations for uncertainty quantification.
 
 # Refining:
 - Use Automatic Mixed Precision (AMP) to speed up training times.
@@ -25,3 +33,6 @@
 - Matplotlib and Seaborn for data visualization.
 - Hosting platform undecided.
 
+>### Notes:<br>
+>- Focusing on 1 driver strategy, as it's not feasible to find Global Nash Equilibrium for all drivers in a race.<br>
+>- Calculating tire wear only, with an assumed constant fuel consumption and controlled other factors.
