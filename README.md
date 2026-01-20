@@ -36,3 +36,6 @@
 >### Notes:<br>
 >- Focusing on 1 driver strategy, as it's not feasible to find Global Nash Equilibrium for all drivers in a race.<br>
 >- Calculating tire wear only, with an assumed constant fuel consumption and controlled other factors.
+>- Using ETL pipelines for data processing and model training. (Phase 1)
+>- Modelling Arrhenius equation for decay law of tire wear.
+>- Using game state vector to capture all data required for model output.
