@@ -39,3 +39,4 @@
 >- Using ETL pipelines for data processing and model training. (Phase 1)
 >- Modelling Arrhenius equation for decay law of tire wear.
 >- Using game state vector to capture all data required for model output.
+>- Small racing game while loading data to keep user engaged.
