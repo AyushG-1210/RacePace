@@ -17,9 +17,9 @@ clean_stint = clean_stint[(clean_stint['LapNumber'] > 35) & (clean_stint['LapNum
 
 # 3. Plot AGAIN
 plt.figure(figsize=(10, 6))
-plt.plot(clean_stint['LapNumber'], clean_stint['LapTimeSeconds'], 
+plt.plot(clean_stint['LapNumber'], clean_stint['LapTimeSeconds'],
          label='Raw (Fuel Advantage Hides Deg)', color='gray', linestyle='--')
-plt.plot(clean_stint['LapNumber'], clean_stint['FuelCorrectedTime'], 
+plt.plot(clean_stint['LapNumber'], clean_stint['FuelCorrectedTime'],
          label='Corrected (The True Physics)', color='red', linewidth=3)
 
 plt.title("Zoomed In: The True Tire Decay (Laps 35-50)")

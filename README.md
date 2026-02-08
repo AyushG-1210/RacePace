@@ -40,3 +40,5 @@
 >- Modelling Arrhenius equation for decay law of tire wear.
 >- Using game state vector to capture all data required for model output.
 >- Small racing game while loading data to keep user engaged.
+>- MoE PINN architecture to capture different track spots (straights and corners).
+>- Adpative Batching (1000 cars simultaneously) to speed up training.

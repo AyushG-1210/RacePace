@@ -5,99 +5,126 @@ import numpy as np
 # --- CONFIGURATION ---
 CACHE_DIR = './cache'   # Relative path for local storage
 fastf1.Cache.enable_cache(CACHE_DIR)
-print("cache cleared \n\n")
 
-def load_session(year, circuit, session_type='R'):
+def load_race_session(year, circuit):
     """
-    Loads the race session object. This is the heavy network call.
+    Loads the Race session (Lightweight - mainly for timing/strategy context).
     """
-    print(f"--> [NETWORK] Loading Session: {year} {circuit} ({session_type})...")
-    session = fastf1.get_session(year, circuit, session_type)
-    session.load(telemetry=False, weather=True) # Weather=True is crucial for physics
+    print(f"--> [NETWORK] Loading Race Session: {year} {circuit}...")
+    session = fastf1.get_session(year, circuit, 'R')
+    # We keep telemetry=False for the race to save memory, 
+    # unless you want to analyze specific race laps later.
+    session.load(telemetry=False, weather=True) 
     return session
 
-def get_hero_data(session, driver_code):
+def get_style_data(year, circuit, driver_code):
     """
-    Extracts high-fidelity data for the Hero Driver (Piastri).
+    Loads the Qualifying session to extract the 'Golden Lap' telemetry.
+    This serves as the 'DNA' for the driving style (Throttle/Brake maps).
     """
-    print(f"--> [INGEST] Extracting Hero Data for {driver_code}...")
+    print(f"--> [NETWORK] Loading Quali Session for Style Analysis...")
+    session = fastf1.get_session(year, circuit, 'Q')
     
-    # 1. Pick the driver
+    # We NEED telemetry here to get throttle/brake traces
+    session.load(telemetry=True, weather=False) 
+    
+    print(f"--> [INGEST] Extracting Fastest Lap Telemetry for {driver_code}...")
+    try:
+        laps = session.laps.pick_drivers(driver_code)
+        fastest_lap = laps.pick_fastest()
+        
+        # Get the detailed physics data (Speed, Throttle, Brake, Gear, RPM, etc.)
+        # adding 'Distance' is crucial for mapping it to the track
+        telemetry = fastest_lap.get_telemetry()
+        
+        # Metadata for normalization
+        stats = {
+            'LapTime': fastest_lap['LapTime'].total_seconds(),
+            'Compound': fastest_lap['Compound'],
+            'TyreLife': fastest_lap['TyreLife']
+        }
+        
+        return telemetry, stats
+    
+    except Exception as e:
+        print(f"!! [ERROR] Could not extract style data: {e}")
+        return None, None
+
+def get_driver_race_data(session, driver_code):
+    """
+    Extracts race timing data for a specific driver (Hero or Rival).
+    """
+    print(f"--> [INGEST] Extracting Race Data for {driver_code}...")
     laps = session.laps.pick_drivers(driver_code)
     
-    # 2. Select columns relevant for Physics/PINN
-    # We need: Time (for order), LapTime (target), TyreLife (input), Compound (context)
     cols = [
         'LapNumber', 'Stint', 'Compound', 'TyreLife', 
-        'LapTime', 'Time', 'PitInTime', 'PitOutTime'
+        'LapTime', 'Time', 'PitInTime', 'PitOutTime', 
+        'TrackStatus' # Useful to filter out Safety Car laps later
     ]
     
-    # Create a copy to avoid SettingWithCopy warnings later
-    hero_df = laps[cols].copy()
+    df = laps[cols].copy()
     
-    # 3. Convert Timedeltas to Seconds (Float) for Math
-    hero_df['LapTimeSeconds'] = hero_df['LapTime'].dt.total_seconds()
-    hero_df['RaceTimeSeconds'] = hero_df['Time'].dt.total_seconds()
+    # Cleaning
+    df['LapTimeSeconds'] = df['LapTime'].dt.total_seconds()
+    df['RaceTimeSeconds'] = df['Time'].dt.total_seconds()
     
-    return hero_df
-
-def get_global_data(session):
-    """
-    Extracts 'Ghost Data' for the rest of the grid (Traffic Map).
-    """
-    print(f"--> [INGEST] Extracting Global Grid Data...")
-    
-    # We just need to know WHERE everyone is.
-    # Driver, LapNumber, and the cumulative RaceTime (when they crossed the line)
-    global_df = session.laps[['Driver', 'LapNumber', 'Time', 'LapTime']].copy()
-    
-    # Convert to seconds
-    global_df['RaceTimeSeconds'] = global_df['Time'].dt.total_seconds()
-    global_df['LapTimeSeconds'] = global_df['LapTime'].dt.total_seconds()
-    
-    return global_df
+    return df
 
 def get_weather_data(session):
     """
     Extracts environmental variables.
     """
     print(f"--> [INGEST] Extracting Weather Conditions...")
-    
-    # FastF1 returns weather minute-by-minute. 
-    # For Phase 1, we'll return the full dataframe so Step 2 can align it with laps.
     weather_df = session.weather_data
-    
-    # Keep only what impacts Tyres
     cols = ['Time', 'AirTemp', 'TrackTemp', 'Humidity', 'Rainfall']
     return weather_df[cols]
 
 # --- ORCHESTRATOR ---
 def run_ingestion():
-    # Hardcoded Inputs as requested
-    YEAR = int(input("Enter Year: "))
-    CIRCUIT = input("Enter Circuit: ")
-    DRIVER = input("Enter Driver Code: ")
-    age = int(input("Enter Tyre Age (Laps): "))
+    # 1. Inputs
+    print("\n--- CONFIGURATION ---")
+    YEAR = int(input("Enter Year (e.g. 2024): "))
+    CIRCUIT = input("Enter Circuit (e.g. Monaco): ")
+    HERO_CODE = input("Enter Hero Driver (e.g. PIA): ")
+    RIVAL_CODE = input("Enter Rival Driver (e.g. VER): ")
     
-    # 1. Load Session
-    session = load_session(YEAR, CIRCUIT)
+    # 2. Get The "Style" (High Quality Telemetry from Q3)
+    style_telemetry, style_stats = get_style_data(YEAR, CIRCUIT, HERO_CODE)
     
-    # 2. Extract Components
-    hero_df = get_hero_data(session, DRIVER)
-    global_df = get_global_data(session)
-    weather_df = get_weather_data(session)
+    # 3. Get The "Race Context" (Laps, Gaps, Weather)
+    race_session = load_race_session(YEAR, CIRCUIT)
+    
+    hero_race_df = get_driver_race_data(race_session, HERO_CODE)
+    rival_race_df = get_driver_race_data(race_session, RIVAL_CODE)
+    weather_df = get_weather_data(race_session)
     
     print(f"\n--- INGESTION COMPLETE ---")
-    print(f"Hero Laps (PIA): {len(hero_df)} rows")
-    print(f"Global Laps: {len(global_df)} rows")
-    print(f"Weather Records: {len(weather_df)} rows")
+    print(f"Style Data: {len(style_telemetry)} points (Ref Time: {style_stats['LapTime']}s)")
+    print(f"Hero Race Laps: {len(hero_race_df)}")
+    print(f"Rival Race Laps: {len(rival_race_df)}")
     
-    return hero_df, global_df, weather_df, age
+    # 4. Packaging
+    # We return a dictionary so the next file is clean
+    data_bundle = {
+        'metadata': {'year': YEAR, 'circuit': CIRCUIT, 'hero': HERO_CODE, 'rival': RIVAL_CODE},
+        'style': {
+            'telemetry': style_telemetry, # Pandas DF with Speed, Throttle, Brake
+            'stats': style_stats          # Metadata about that push lap
+        },
+        'race': {
+            'hero_laps': hero_race_df,
+            'rival_laps': rival_race_df,
+            'weather': weather_df
+        }
+    }
+    
+    return data_bundle
 
 # --- SELF-TEST ---
 if __name__ == "__main__":
-    h, g, w, a = run_ingestion()
+    data = run_ingestion()
     
-    # Visual Check
-    print("\n[Preview: Hero Data]")
-    print(h[['LapNumber', 'LapTimeSeconds', 'TyreLife']].head())
+    # Visual Sanity Check
+    print("\n[Preview: Style Telemetry]")
+    print(data['style']['telemetry'][['Distance', 'Speed', 'Throttle', 'Brake']].head())
