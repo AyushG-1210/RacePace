@@ -3,17 +3,17 @@
 > Department of Computer Science & Engineering  
 > RV Institute of Technology and Management
 
+## Project Status: Ongoing (In Optimization Phase)
+
+This repository houses the foundational architecture, physical partial differential equations (PDEs), and simulation loops for **RacePace**. The system balances vehicle control policies against multi-variable aerodynamic and tire friction boundary layers using a scientific machine learning framework.
+
+---
+
 ![Python](https://img.shields.io/badge/Python-3.12-3776AB?style=flat-square&logo=python&logoColor=white)
 ![PyTorch](https://img.shields.io/badge/PyTorch-2.3.0-EE4C2C?style=flat-square&logo=pytorch&logoColor=white)
 ![DeepXDE](https://img.shields.io/badge/DeepXDE_SciML-1.12.0-00B4D8?style=flat-square&logo=scipy&logoColor=white)
 ![FastF1](https://img.shields.io/badge/Data-FastF1_API-000000?style=flat-square&logo=formula1&logoColor=red)
 ![License](https://img.shields.io/badge/License-MIT-green?style=flat-square)
-
----
-
-## Project Status: Ongoing (In Optimization Phase)
-
-This repository houses the foundational architecture, physical partial differential equations (PDEs), and simulation loops for **RacePace**. The system balances vehicle control policies against multi-variable aerodynamic and tire friction boundary layers using a scientific machine learning framework.
 
 ---
 
