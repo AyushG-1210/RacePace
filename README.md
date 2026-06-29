@@ -146,7 +146,7 @@ By treating this as a Pareto optimization problem, the network must find the exa
 
 ## Citation
 
-If you utilize the AmorFlux architectural framework or system design pipelines in your research, please use the following citation format:
+If you utilize the RacePace architectural framework or system design pipelines in your research, please use the following citation format:
 
 ```bibtex
 @misc{Gouda2026:RacePace,
