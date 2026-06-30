@@ -135,6 +135,22 @@ By treating this as a Pareto optimization problem, the network must find the exa
 
 ---
 
+## Production MLOps & Microservices Architecture (Planned)
+A core learning objective of this project is transitioning the standalone scientific model into a robust, microservices-driven production application. Rather than serving the PINN as a monolithic script, the system is architected to run as a decoupled, horizontally scalable analytics platform.
+
+### 1. Decoupled Architecture BlueprintThe application is structured into specialized, independent services communicating via asynchronous gRPC and REST protocols:
+- Ingestion Microservice: Interacts with streaming telemetry hooks, automatically extracting spatial curvature vectors ($\kappa$) and serializing the inputs.
+- Physics Inference Engine: Houses the compiled PyTorch/DeepXDE weights. It acts as a dedicated mathematical server, accepting kinematic inputs and processing the forwarding code path to diagnose maximum grip capacity ($\mu$) and optimal pace configurations in real-time.
+- Telemetry Diagnostics Dashboard: A front-end service that visualizes localized degradation maps and lap-time projection arrays.
+
+### 2. Containerization & Production Orchestration
+To guarantee immutable, runtime-agnostic deployment across variable computing environments, the entire ecosystem is containerized and orchestrated:
+- Docker Compiling: Every microservice is wrapped in a multi-stage Dockerfile, minimizing image size by separating build-time compilation dependencies from light inference runtimes.
+- Kubernetes Orchestration: The service containers are deployed onto a local/cloud Kubernetes cluster. Microservices are decoupled via independent Deployments and exposed internally via unified Kubernetes Services.
+- Horizontal Auto-Scaling: Utilizing the Horizontal Pod Autoscaler (HPA), the Physics Inference pods scale dynamically based on CPU/GPU consumption. If processing a batch of historical telemetry across an entire season increases latency, Kubernetes scales the inference layer out horizontally to preserve processing bandwidth without starving the system's intake nodes.
+
+---
+
 ## Target Performance & Ablation Metrics
 
 | Optimization Methodology | Grip Discovery Accuracy ($\mu$) | Control Trace Jitter Rate | Shortcut Vulnerability |
